@@ -85,6 +85,19 @@ end aes_128_encoder_v1_0_S_AXI;
 
 architecture arch_imp of aes_128_encoder_v1_0_S_AXI is
 
+	-- lsoria: Declare structure of aes_encoder component
+	component aes_encoder is
+	port
+	(
+		clk_in: in std_logic;
+		rst_in: in std_logic;
+
+		plain_text_in: in std_logic_vector(127 downto 0);
+		key_in: in std_logic_vector(127 downto 0);
+		cipher_text_out: out std_logic_vector(127 downto 0)
+	);
+	end component;
+
 	-- AXI4LITE signals
 	signal axi_awaddr	: std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
 	signal axi_awready	: std_logic;
@@ -125,6 +138,11 @@ architecture arch_imp of aes_128_encoder_v1_0_S_AXI is
 	signal reg_data_out	:std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
 	signal byte_index	: integer;
 	signal aw_en	: std_logic;
+
+	-- lsoria: Added signals that will interface the AXI registers with the AES encoder.
+	signal plain_text: std_logic_vector(127 downto 0);
+	signal key: std_logic_vector(127 downto 0);
+	signal cipher_text: std_logic_vector(127 downto 0);
 
 begin
 	-- I/O Connections assignments
@@ -433,7 +451,10 @@ begin
 	-- and the slave is ready to accept the read address.
 	slv_reg_rden <= axi_arready and S_AXI_ARVALID and (not axi_rvalid) ;
 
-	process (slv_reg0, slv_reg1, slv_reg2, slv_reg3, slv_reg4, slv_reg5, slv_reg6, slv_reg7, slv_reg8, slv_reg9, slv_reg10, slv_reg11, axi_araddr, S_AXI_ARESETN, slv_reg_rden)
+
+	-- lsoria: We need to add cipher_text signal to the sensitivity list of this process, and use it instead of
+	-- slv_reg8-11 registers.
+	process (slv_reg0, slv_reg1, slv_reg2, slv_reg3, slv_reg4, slv_reg5, slv_reg6, slv_reg7, cipher_text, axi_araddr, S_AXI_ARESETN, slv_reg_rden)
 	variable loc_addr :std_logic_vector(OPT_MEM_ADDR_BITS downto 0);
 	begin
 	    -- Address decoding for reading registers
@@ -456,17 +477,17 @@ begin
 	      when b"0111" =>
 	        reg_data_out <= slv_reg7;
 	      when b"1000" =>
-	        reg_data_out <= slv_reg8;
+	        reg_data_out <= cipher_text(127 downto 96); --slv_reg8
 	      when b"1001" =>
-	        reg_data_out <= slv_reg9;
+	        reg_data_out <= cipher_text(95 downto 64);  -- slv_reg9
 	      when b"1010" =>
-	        reg_data_out <= slv_reg10;
+	        reg_data_out <= cipher_text(63 downto 32);  -- slv_reg10
 	      when b"1011" =>
-	        reg_data_out <= slv_reg11;
+	        reg_data_out <= cipher_text(31 downto 0);   -- slv_reg11
 	      when others =>
 	        reg_data_out  <= (others => '0');
 	    end case;
-	end process; 
+	end process;
 
 	-- Output register or memory read data
 	process( S_AXI_ACLK ) is
@@ -488,6 +509,20 @@ begin
 
 
 	-- Add user logic here
+
+	-- Compose the plain_text and key signals from the register values
+	plain_text <= (slv_reg0 & slv_reg1 & slv_reg2 & slv_reg3);
+	key <= (slv_reg4 & slv_reg5 & slv_reg6 & slv_reg7);
+
+    AES128_ENCODER: aes_encoder
+    port map
+    (
+        clk_in => S_AXI_ACLK,
+        rst_in => S_AXI_ARESETN,
+        plain_text_in => plain_text,
+        key_in => key,
+        cipher_text_out => cipher_text
+    );
 
 	-- User logic ends
 
