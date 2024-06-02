@@ -19,18 +19,18 @@ begin
             when x"00" => byte_out <= x"63";
             when x"01" => byte_out <= x"7C";
             when x"02" => byte_out <= x"77";
-            when x"03" => byte_out <= x"14";
+            when x"03" => byte_out <= x"7B";
             when x"04" => byte_out <= x"F2";
             when x"05" => byte_out <= x"6B";
             when x"06" => byte_out <= x"6F";
             when x"07" => byte_out <= x"C5";
             when x"08" => byte_out <= x"30";
-            when x"09" => byte_out <= x"45";
+            when x"09" => byte_out <= x"01";
             when x"0A" => byte_out <= x"67";
             when x"0B" => byte_out <= x"2B";
             when x"0C" => byte_out <= x"FE";
             when x"0D" => byte_out <= x"D7";
-            when x"0E" => byte_out <= x"74";
+            when x"0E" => byte_out <= x"AB";
             when x"0F" => byte_out <= x"76";
 
             when x"10" => byte_out <= x"CA";
@@ -42,7 +42,7 @@ begin
             when x"16" => byte_out <= x"47";
             when x"17" => byte_out <= x"F0";
             when x"18" => byte_out <= x"AD";
-            when x"19" => byte_out <= x"90";
+            when x"19" => byte_out <= x"D4";
             when x"1A" => byte_out <= x"A2";
             when x"1B" => byte_out <= x"AF";
             when x"1C" => byte_out <= x"9C";
@@ -88,7 +88,7 @@ begin
             when x"41" => byte_out <= x"83";
             when x"42" => byte_out <= x"2C";
             when x"43" => byte_out <= x"1A";
-            when x"44" => byte_out <= x"23";
+            when x"44" => byte_out <= x"1B";
             when x"45" => byte_out <= x"6E";
             when x"46" => byte_out <= x"5A";
             when x"47" => byte_out <= x"A0";
@@ -155,7 +155,7 @@ begin
             when x"80" => byte_out <= x"CD";
             when x"81" => byte_out <= x"0C";
             when x"82" => byte_out <= x"13";
-            when x"83" => byte_out <= x"ff";
+            when x"83" => byte_out <= x"EC";
             when x"84" => byte_out <= x"5F";
             when x"85" => byte_out <= x"97";
             when x"86" => byte_out <= x"44";

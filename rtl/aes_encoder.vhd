@@ -24,33 +24,31 @@ architecture aes_encoder_arch of aes_encoder is
     );
     end component;
 
-    -- signal plain_text: std_logic_vector(127 downto 0);
-    -- signal key: std_logic_vector(127 downto 0);
-    -- signal cipher_text: std_logic_vector(127 downto 0);
+     signal plain_text: std_logic_vector(127 downto 0);
+     signal key: std_logic_vector(127 downto 0);
+     signal cipher_text: std_logic_vector(127 downto 0);
 
 begin
 
-    -- AES: aes_encoder_logic
-    -- port map
-    -- (
-    --     plain_text_in => plain_text,
-    --     key_in => key,
-    --     cipher_text_out => cipher_text
-    -- );
+     AES: aes_encoder_logic
+     port map
+     (
+         plain_text_in => plain_text,
+         key_in => key,
+         cipher_text_out => cipher_text
+     );
 
     process(clk_in, rst_in)
     begin
         if rising_edge(clk_in) then
             if rst_in = '0' then
-                cipher_text_out <= x"a5a5a5a5ffffffff5a5a5a5affffffff";
-                -- cipher_text_out <= (others => '0');
+                 cipher_text_out <= (others => '0');
             else
-                cipher_text_out <= x"DEADBEEFDEADBEEFDEADBEEFDEADBEEF";
-                -- cipher_text_out <= cipher_text;
+                 cipher_text_out <= cipher_text;
             end if;
 
-            -- plain_text <= plain_text_in;
-            -- key <= key_in;
+             plain_text <= plain_text_in;
+             key <= key_in;
         end if;
     end process;
 
