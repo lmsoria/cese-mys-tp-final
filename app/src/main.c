@@ -1,15 +1,32 @@
-/*
- * main.c
- *
- *  Created on: 30 may. 2024
- *      Author: lsoria
- */
+/**********************************************************************************************************************
+Copyright (c) 2024, Leandro Soria <leandromsoria@gmail.com>
+
+Some fancy copyright message here (if needed)
+**********************************************************************************************************************/
+
+///
+/// @file main.c
+/// @brief Main application source file
+///
+
+// === Headers files inclusions ==================================================================================== //
+
 #include <stdint.h>
 #include "aes_128_encoder.h"
 #include "xil_io.h"
 #include "xparameters.h"
 
-#define AES_INSTANCE (XPAR_AES_128_ENCODER_0_S_AXI_BASEADDR)
+// === Macros definitions ========================================================================================== //
+
+#define AES_INSTANCE (XPAR_AES_128_ENCODER_S_AXI_BASEADDR)
+
+// === Private data type declarations ============================================================================== //
+// === Private variable declarations =============================================================================== //
+// === Private function declarations =============================================================================== //
+// === Public variable definitions ================================================================================= //
+// === Private variable definitions ================================================================================ //
+// === Private function implementation ============================================================================= //
+// === Public function implementation ============================================================================== //
 
 int main(void)
 {
@@ -43,3 +60,5 @@ int main(void)
 
 	return 0;
 }
+
+// === End of documentation ======================================================================================== //
