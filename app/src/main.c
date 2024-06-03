@@ -143,6 +143,8 @@ static void on_echoing(void)
 		current_state = GETTING_KEY;
 		reset_key();
 		xil_printf(CLEAR_SCREEN);
+		cursor_x = 0;
+		cursor_y = 0;
 		return;
 	}
 
@@ -151,7 +153,6 @@ static void on_echoing(void)
 	encoder_encode_data(plain_text_data, cipher_text_data);
 
     // Save current cursor position
-//    cursor_x++;
     if (++cursor_x >= TERMINAL_SIZE_X || CHAR_ENTER == received_char) {
         cursor_x = 0;
         cursor_y++;
@@ -169,7 +170,7 @@ static void on_echoing(void)
 
 	// Echo the character back
     xil_printf("%c", received_char);
-	uart_write_byte(UART_CRYPTO, cipher_text_data[0]);
+	uart_write_bytes(UART_CRYPTO, cipher_text_data, 16);
 }
 
 // === Public function implementation ============================================================================== //
@@ -189,6 +190,8 @@ int main(void)
 	encoder_initialize(AES_INSTANCE);
 
 	current_state = GETTING_KEY;
+
+	xil_printf(CLEAR_SCREEN);
 
 	while(1) {
 		switch (current_state)

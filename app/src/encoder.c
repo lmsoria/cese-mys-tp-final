@@ -71,6 +71,8 @@ void encoder_encode_data(uint8_t* src, uint8_t* dst)
 	m_cipher_text[1] = AES_128_ENCODER_mReadReg(m_encoder_address, AES_128_ENCODER_S_AXI_SLV_REG9_OFFSET);
 	m_cipher_text[2] = AES_128_ENCODER_mReadReg(m_encoder_address, AES_128_ENCODER_S_AXI_SLV_REG10_OFFSET);
 	m_cipher_text[3] = AES_128_ENCODER_mReadReg(m_encoder_address, AES_128_ENCODER_S_AXI_SLV_REG11_OFFSET);
+
+	memcpy(dst, (uint8_t*)m_cipher_text, 16);
 }
 
 const uint32_t* const encoder_get_key() { return m_key; }
