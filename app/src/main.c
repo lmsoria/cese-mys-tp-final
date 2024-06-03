@@ -126,16 +126,19 @@ static void on_setting_key(void)
 
 static void on_echoing(void)
 {
-	uint8_t plain_text_data[16] = {0};
-	uint8_t cipher_text_data[16] = {0};
-	static uint32_t cursor_x = 0;
-	static uint32_t cursor_y = 0;
-
+	// Variables used for debugging purposes, so we can show the processed data.
 	const uint32_t* const KEY = encoder_get_key();
 	const uint32_t* const PLAIN_TEXT = encoder_get_plain_text();
 	const uint32_t* const CIPHER_TEXT = encoder_get_cipher_text();
 
+	// Static variables to keep track of the cursor (for echo on the shell terminal)
+	static uint32_t cursor_x = 0;
+	static uint32_t cursor_y = 0;
 
+	uint8_t plain_text_data[16] = {0};
+	uint8_t cipher_text_data[16] = {0};
+
+	// First step: Read user input.
 	uint8_t received_char = uart_read_byte(UART_SHELL);
 
 	// If user hits ESC, then clear screen and go back to GETTING_KEY state.
@@ -148,8 +151,8 @@ static void on_echoing(void)
 		return;
 	}
 
+	// Second step: Encode the data.
 	plain_text_data[0] = received_char;
-
 	encoder_encode_data(plain_text_data, cipher_text_data);
 
     // Save current cursor position
@@ -165,11 +168,10 @@ static void on_echoing(void)
     xil_printf("\n\r");
     print_bar();
 
-    // Move the cursor to the last position of typed text
-    xil_printf("\033[%d;%dH", 16 + cursor_y, cursor_x);
+    // Move the cursor to the last position of typed text and echo the character back
+    xil_printf("\033[%d;%dH%c", 16 + cursor_y, cursor_x, received_char);
 
-	// Echo the character back
-    xil_printf("%c", received_char);
+    // Third step: Send cipher text (16 bytes) over UART1
 	uart_write_bytes(UART_CRYPTO, cipher_text_data, 16);
 }
 
