@@ -12,9 +12,10 @@ Some fancy copyright message here (if needed)
 // === Headers files inclusions ==================================================================================== //
 
 #include <stdint.h>
-#include "aes_128_encoder.h"
 #include "xil_io.h"
+#include "xstatus.h"
 
+#include "encoder.h"
 #include "main.h"
 #include "uart.h"
 
@@ -22,7 +23,9 @@ Some fancy copyright message here (if needed)
 
 #define CHAR_ENTER   (0x0D)  // Used to detect a new line
 #define CHAR_ESCAPE  (0x1B)  // Used to change the key
-#define CLEAR_SCREEN ("\033[2J\033[H") // ASCII sequence to clear screen and go to HOME position
+#define CLEAR_SCREEN ("\033[2J\033[H") // ANSI sequence to clear screen and go to HOME position
+
+#define TERMINAL_SIZE_X (80U)
 
 // === Private data type declarations ============================================================================== //
 
@@ -68,6 +71,8 @@ static void on_getting_key(void)
 	// Ensure we print this message only once, during the entry.
 	if(show_message) {
 		print_bar();
+		xil_printf("AES-128 Encoder application starts here\n\r");
+		print_bar();
 		xil_printf("Enter the AES-128 Key: ");
 		show_message = 0;
 	}
@@ -109,6 +114,8 @@ static void on_setting_key(void)
 	}
 	xil_printf(")\n\r");
 
+	encoder_set_key(key_buffer);
+
 	xil_printf("Started echo service on UART1. \n\r");
 	xil_printf("Messages typed here will be sent encrypted using the specified key.\n\r");
 	xil_printf("Press ESC to set a new key.\n\r");
@@ -119,6 +126,16 @@ static void on_setting_key(void)
 
 static void on_echoing(void)
 {
+	uint8_t plain_text_data[16] = {0};
+	uint8_t cipher_text_data[16] = {0};
+	static uint32_t cursor_x = 0;
+	static uint32_t cursor_y = 0;
+
+	const uint32_t* const KEY = encoder_get_key();
+	const uint32_t* const PLAIN_TEXT = encoder_get_plain_text();
+	const uint32_t* const CIPHER_TEXT = encoder_get_cipher_text();
+
+
 	uint8_t received_char = uart_read_byte(UART_SHELL);
 
 	// If user hits ESC, then clear screen and go back to GETTING_KEY state.
@@ -129,9 +146,30 @@ static void on_echoing(void)
 		return;
 	}
 
+	plain_text_data[0] = received_char;
+
+	encoder_encode_data(plain_text_data, cipher_text_data);
+
+    // Save current cursor position
+//    cursor_x++;
+    if (++cursor_x >= TERMINAL_SIZE_X || CHAR_ENTER == received_char) {
+        cursor_x = 0;
+        cursor_y++;
+    }
+
+	xil_printf("\033[11;1H");
+    xil_printf("Key        : %08x %08x %08x %08x\n\r", KEY[0], KEY[1], KEY[2], KEY[3]);
+	xil_printf("Plain Text : %08x %08x %08x %08x\n\r", PLAIN_TEXT[0], PLAIN_TEXT[1], PLAIN_TEXT[2], PLAIN_TEXT[3]);
+    xil_printf("Cipher Text: %08x %08x %08x %08x\n\r", CIPHER_TEXT[0], CIPHER_TEXT[1], CIPHER_TEXT[2], CIPHER_TEXT[3]);
+    xil_printf("\n\r");
+    print_bar();
+
+    // Move the cursor to the last position of typed text
+    xil_printf("\033[%d;%dH", 16 + cursor_y, cursor_x);
+
 	// Echo the character back
-	uart_write_byte(UART_SHELL, received_char);
-	uart_write_byte(UART_CRYPTO, received_char);
+    xil_printf("%c", received_char);
+	uart_write_byte(UART_CRYPTO, cipher_text_data[0]);
 }
 
 // === Public function implementation ============================================================================== //
@@ -148,9 +186,7 @@ int main(void)
 		return XST_FAILURE;
 	}
 
-	print_bar();
-	xil_printf("AES-128 Encoder application starts here\n\r");
-	print_bar();
+	encoder_initialize(AES_INSTANCE);
 
 	current_state = GETTING_KEY;
 
@@ -174,10 +210,6 @@ int main(void)
 			break;
 		}
 	}
-
-	print_bar();
-	xil_printf("AES-128 Encoder application stopped\n\r");
-	print_bar();
 
 	return XST_SUCCESS;
 }
