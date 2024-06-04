@@ -35,7 +35,7 @@ static uint32_t m_cipher_text[4] = {0};
 
 void encoder_initialize(const uint32_t device_id)
 {
-	m_encoder_address = device_id;
+    m_encoder_address = device_id;
 
     AES_128_ENCODER_mWriteReg(m_encoder_address, AES_128_ENCODER_S_AXI_SLV_REG0_OFFSET, m_plain_text[0]);
     AES_128_ENCODER_mWriteReg(m_encoder_address, AES_128_ENCODER_S_AXI_SLV_REG1_OFFSET, m_plain_text[1]);
