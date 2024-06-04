@@ -26,7 +26,10 @@ Some fancy copyright message here (if needed)
 #define CLEAR_SCREEN ("\033[2J\033[H") // ANSI sequence to clear screen and go to HOME position
 
 #define TERMINAL_SIZE_X (80U)
+#define TERMINAL_ECHO_SECTION_OFFSET_Y (16U)
+
 #define KEY_SIZE (16U)
+#define DATA_BLOCK_SIZE (16U)
 
 // === Private data type declarations ============================================================================== //
 
@@ -151,8 +154,8 @@ static void on_echoing(void)
 	static uint32_t cursor_x = 0;
 	static uint32_t cursor_y = 0;
 
-	uint8_t plain_text_data[16] = {0};
-	uint8_t cipher_text_data[16] = {0};
+	uint8_t plain_text_data[DATA_BLOCK_SIZE] = {0};
+	uint8_t cipher_text_data[DATA_BLOCK_SIZE] = {0};
 
 	// First step: Read user input.
 	uint8_t received_char = uart_read_byte(UART_SHELL);
@@ -185,10 +188,11 @@ static void on_echoing(void)
     print_bar();
 
     // Move the cursor to the last position of typed text and echo the character back
-    xil_printf("\033[%d;%dH%c", 16 + cursor_y, cursor_x, received_char);
+	// If we need to print more lines before the "echo" section, please update TERMINAL_ECHO_SECTION_OFFSET_Y value
+    xil_printf("\033[%d;%dH%c", TERMINAL_ECHO_SECTION_OFFSET_Y + cursor_y, cursor_x, received_char);
 
     // Third step: Send cipher text (16 bytes) over UART1
-	uart_write_bytes(UART_CRYPTO, cipher_text_data, 16);
+	uart_write_bytes(UART_CRYPTO, cipher_text_data, DATA_BLOCK_SIZE);
 }
 
 // === Public function implementation ============================================================================== //
