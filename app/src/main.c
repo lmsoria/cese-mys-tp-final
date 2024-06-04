@@ -26,6 +26,7 @@ Some fancy copyright message here (if needed)
 #define CLEAR_SCREEN ("\033[2J\033[H") // ANSI sequence to clear screen and go to HOME position
 
 #define TERMINAL_SIZE_X (80U)
+#define KEY_SIZE (16U)
 
 // === Private data type declarations ============================================================================== //
 
@@ -40,25 +41,36 @@ typedef enum {
 // === Private variable declarations =============================================================================== //
 // === Private function declarations =============================================================================== //
 
+/// @brief Reset the application key to be all zeroes. This function won't impact on the encoder stored key.
 static void reset_key(void);
+
+/// @brief Helper function to print a dashed line on terminal
 static void print_bar(void);
-static void on_error(void);
+
+/// @brief GETTING_KEY state entry point.
 static void on_getting_key(void);
+
+/// @brief SETTING_KEY state entry point.
 static void on_setting_key(void);
+
+/// @brief ECHOING state entry point.
 static void on_echoing(void);
+
+/// @brief ERROR state entry point.
+static void on_error(void);
 
 // === Public variable definitions ================================================================================= //
 // === Private variable definitions ================================================================================ //
 
-static uint8_t key_buffer[16] = {0};
+static uint8_t app_key[KEY_SIZE] = {0};
 
 static ApplicationState current_state;
 
 // === Private function implementation ============================================================================= //
 
-static void reset_key(void) { memset(key_buffer, 0, 16); }
+static void reset_key(void) { memset(app_key, 0, KEY_SIZE); }
 
-static void print_bar(void) { xil_printf("--------------------------------------------------------------------------------\n\r"); }
+static void print_bar(void) { xil_printf("-------------------------------------------------------------------------------\n\r"); }
 
 static void on_error(void) { while(1); }
 
@@ -85,9 +97,11 @@ static void on_getting_key(void)
 	if (CHAR_ENTER == received_char) {
 		goto exit_getting_key_state;
 	} else {
-		key_buffer[index++] = received_char;
+		app_key[index++] = received_char;
 
-		if(index == 16) {
+		if(index == KEY_SIZE) {
+			// Don't forget to echo the character back before we leave
+			uart_write_byte(UART_SHELL, received_char);
 			goto exit_getting_key_state;
 		}
 	}
@@ -98,25 +112,27 @@ static void on_getting_key(void)
 
 	// State exit point. Reset internal variables
 	exit_getting_key_state:
+	{
 		current_state = SETTING_KEY;
 		index = 0;
 		show_message = 1;
 		return;
+	}
 }
 
 static void on_setting_key(void)
 {
 	uart_write_bytes(UART_SHELL, (uint8_t*)"\n\r", 2);
 
-	xil_printf("Using key: %s ( ", key_buffer);
-	for(uint8_t i = 0; i < 16; i++) {
-		xil_printf("%02x ", key_buffer[i]);
+	xil_printf("Using key: %s ( ", app_key);
+	for(uint8_t i = 0; i < KEY_SIZE; i++) {
+		xil_printf("%02x ", app_key[i]);
 	}
 	xil_printf(")\n\r");
 
-	encoder_set_key(key_buffer);
+	encoder_set_key(app_key);
 
-	xil_printf("Started echo service on UART1. \n\r");
+	xil_printf("Started echo service on UART1.\n\r");
 	xil_printf("Messages typed here will be sent encrypted using the specified key.\n\r");
 	xil_printf("Press ESC to set a new key.\n\r");
 	print_bar();
@@ -216,6 +232,7 @@ int main(void)
 		}
 	}
 
+	// Should never reach here.
 	return XST_SUCCESS;
 }
 
