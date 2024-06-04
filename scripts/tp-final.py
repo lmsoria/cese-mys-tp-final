@@ -4,7 +4,21 @@ import glob
 import serial
 import sys
 
-# Packet buffer
+# This python script open a serial port, and prompts the user for a key.
+# Then, it will isten to incoming data and try to decode it using AES-128
+# If we're able to decode the data as an ASCII character, we print it in green.
+# Otherwise, we print the raw decoded output in red
+
+# ANSI escape code for green text
+GREEN = '\033[92m'
+
+# ANSI escape code for red text
+RED = '\033[91m'
+
+# ANSI escape code to reset text color
+RESET = '\033[0m'
+
+# Packet buffer, where we store incoming data
 packets = []
 
 def serial_ports():
@@ -35,8 +49,7 @@ def serial_ports():
             pass
     return result
 
-# This function fires whenever data is received over the serial port. The whole
-# packet state machine runs here.
+# This function fires whenever data is received over the serial port.
 async def handle_serial_data():
     global uart
     while True:
@@ -44,12 +57,8 @@ async def handle_serial_data():
         if uart.in_waiting >= 16:
             data = uart.read(16)
             if data:
-                print(f"Received {len(data)} bytes through uart")
-                hex_data = ' '.join([f"{byte:02X}" for byte in data])
-                print("Data received:", hex_data)
                 packets.append(data)
         await asyncio.sleep(0.1)
-
 
 # Function to allow us to await a packet
 async def wait_for_packet():
@@ -71,6 +80,8 @@ async def main():
     print("Available Serial Ports:")
     for port in serial_ports():
         print("    > {}".format(port))
+
+    # Prompt the user for the UART port
     user_input = input("Select Port: ")
     print("Opening port {} at 115200 bauds, 8N1".format(user_input))
     uart = serial.Serial(user_input, 115200)
@@ -91,19 +102,25 @@ async def main():
 
     # Start the serial data handling coroutine
     serial_task = asyncio.create_task(handle_serial_data())
-    print('Waiting for packet...')
+    print('Waiting for packets...')
+
     while True:
         packet = await wait_for_packet()
-        print("Received encrypted packet:", packet)
         decrypted_packet = cipher.decrypt(packet)
         try:
-            # Decode the decrypted packet as ASCII
+            # Try to decode the decrypted packet as ASCII
             ascii_decoded_packet = decrypted_packet.decode('ascii')
-            print("Decrypted packet (ASCII):", ascii_decoded_packet)
+            # Print ASCII decoded packet in green without newline
+            print(GREEN + ascii_decoded_packet + RESET, end='', flush=False)
+            # Exception to the rule: if we get a newline, we indeed need to print a newline.
+            if '\n' in ascii_decoded_packet or '\r' in ascii_decoded_packet:
+                print()
         except UnicodeDecodeError:
+            # If we fail to decode the ASCII character, just print the raw hex message in red
             hex_packet = decrypted_packet.hex()
-            print("Decrypted packet (hex):", hex_packet)
-
+            print(RED + hex_packet + RESET, end='\n', flush=False)
+        # Flush output to ensure it appears immediately
+        sys.stdout.flush()
 
 if __name__ == '__main__':
     asyncio.run(main())
