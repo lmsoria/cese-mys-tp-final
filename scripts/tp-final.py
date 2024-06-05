@@ -1,5 +1,6 @@
 from Crypto.Cipher import AES
 import asyncio
+import binascii
 import glob
 import serial
 import sys
